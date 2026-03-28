@@ -6,8 +6,8 @@
 
 :root {
   --surface: #ffffff;
-  --brand-1: #fb923c;
-  --brand-2: #22d3ee;
+  --brand-1: #dc2626;
+  --brand-2: #2563eb;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -88,10 +88,11 @@
 
 body {
   font-family: var(--font-bricolage), "Segoe UI", sans-serif;
-  background-image:
-    radial-gradient(circle at 0% 0%, color-mix(in oklab, var(--brand-1) 30%, transparent), transparent 38%),
-    radial-gradient(circle at 100% 0%, color-mix(in oklab, var(--brand-2) 26%, transparent), transparent 35%),
-    linear-gradient(180deg, #fff7ed 0%, #fffbeb 48%, #fdf4ff 100%);
+  background-image: linear-gradient(180deg, #fff1f2 0%, #ffffff 52%, #eff6ff 100%);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-attachment: fixed;
+  background-position: top center;
   min-height: 100vh;
 }
 
@@ -100,6 +101,7 @@ body {
 }
 
 .dark {
+  color-scheme: dark;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -133,6 +135,11 @@ body {
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+.dark body {
+  background-image: linear-gradient(180deg, #0b1020 0%, #111827 56%, #1f1129 100%);
+}
+
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -142,5 +149,177 @@ body {
   }
   html {
     @apply font-sans;
+  }
+}
+
+@media (max-width: 767px) {
+  body {
+    /* Mobile tarayicilarda fixed arka plan titresebildigi icin scroll ile birlikte akar. */
+    background-attachment: scroll;
+    background-size: 100% 100%;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse-soft {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--brand-1) 22%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
+
+@keyframes blob-drift-a {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(90px, 65px, 0) scale(1.06); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes blob-drift-b {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-95px, 55px, 0) scale(0.94); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes blob-drift-c {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(65px, -70px, 0) scale(1.04); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes wash-shift {
+  0% { background-position: 0% 50%; opacity: 0.14; }
+  50% { background-position: 100% 50%; opacity: 0.2; }
+  100% { background-position: 0% 50%; opacity: 0.14; }
+}
+
+@keyframes confetti-burst {
+  0% {
+    opacity: 0;
+    transform: translate3d(-50%, -50%, 0) scale(0.5) rotate(0deg);
+  }
+  8% {
+    opacity: 1;
+  }
+  72% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(-50% + var(--x-spread, 0px)), calc(-50% + var(--y-spread, 0px)), 0)
+      scale(var(--piece-scale, 1)) rotate(var(--piece-rotation, 360deg));
+  }
+}
+
+@layer utilities {
+  .animate-fade-up {
+    animation: fade-up 620ms cubic-bezier(0.18, 0.8, 0.2, 1) both;
+  }
+
+  .animate-pop-in {
+    animation: pop-in 420ms cubic-bezier(0.18, 0.8, 0.2, 1) both;
+  }
+
+  .animate-stagger {
+    animation-delay: var(--stagger-delay, 0ms);
+  }
+
+  .interactive-lift {
+    transition: transform 220ms ease, box-shadow 220ms ease;
+  }
+
+  .interactive-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -16px rgb(24 24 27 / 45%);
+  }
+
+  .interactive-pulse {
+    animation: pulse-soft 1000ms ease-out;
+  }
+
+  .bg-blob {
+    position: absolute;
+    border-radius: 999px;
+    filter: blur(70px);
+    will-change: transform;
+    opacity: 0.5;
+  }
+
+  .bg-blob-orange {
+    top: -9rem;
+    left: -8rem;
+    width: 24rem;
+    height: 24rem;
+    background: color-mix(in oklab, #ef4444 42%, transparent);
+    animation: blob-drift-a 24s ease-in-out infinite;
+  }
+
+  .bg-blob-cyan {
+    top: 18%;
+    right: -9rem;
+    width: 24rem;
+    height: 24rem;
+    background: color-mix(in oklab, #3b82f6 44%, transparent);
+    animation: blob-drift-b 28s ease-in-out infinite;
+  }
+
+  .bg-blob-fuchsia {
+    bottom: -9rem;
+    left: 26%;
+    width: 20rem;
+    height: 20rem;
+    background: color-mix(in oklab, #fda4af 30%, transparent);
+    animation: blob-drift-c 30s ease-in-out infinite;
+  }
+
+  .bg-wash {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, rgb(220 38 38 / 12%), rgb(59 130 246 / 12%), rgb(248 250 252 / 8%));
+    background-size: 200% 200%;
+    mix-blend-mode: soft-light;
+    animation: wash-shift 18s linear infinite;
+  }
+
+  .confetti-piece {
+    position: absolute;
+    width: 9px;
+    height: 15px;
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 22%) inset;
+    animation: confetti-burst 1400ms cubic-bezier(0.08, 0.88, 0.2, 1) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-pop-in,
+  .interactive-lift,
+  .bg-blob,
+  .bg-wash {
+    animation-duration: 120ms !important;
+    transition-duration: 120ms !important;
   }
 }

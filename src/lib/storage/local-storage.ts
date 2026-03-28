@@ -42,3 +42,11 @@ export function writeProgress(progress: StoredProgress): void {
 
   window.localStorage.setItem(STORAGE_KEYS.progress, JSON.stringify(progress));
 }
+
+export function clearProgress(): void {
+  if (!isBrowser()) {
+    return;
+  }
+
+  window.localStorage.removeItem(STORAGE_KEYS.progress);
+}

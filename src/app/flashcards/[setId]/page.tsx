@@ -1,11 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useState } from "react";
 import { notFound, useParams } from "next/navigation";
 import { getCardsBySetId, getWordSetById } from "@/lib/data/wordsets";
 import { applySm2, getDefaultReviewState, type QualityScore } from "@/lib/sm2/algorithm";
 import { readProgress, writeProgress } from "@/lib/storage/local-storage";
-import { canSpeak, speakRussian } from "@/lib/speech/web-speech";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 export default function FlashcardsPage() {
   const params = useParams<{ setId: string }>();
@@ -16,15 +20,28 @@ export default function FlashcardsPage() {
 
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [done, setDone] = useState(false);
   const [viewTimestamp] = useState<number>(() => Date.now());
+  const [progress] = useState(() => readProgress());
 
   if (!setItem) {
     notFound();
   }
 
-  const current = cards[index];
+  if (!cards.length) {
+    return (
+      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Bu sette henüz kart bulunmuyor</CardTitle>
+          </CardHeader>
+        </Card>
+      </main>
+    );
+  }
 
-  const progress = useMemo(() => readProgress(), []);
+  const current = cards[index];
+  const progressRate = ((index + 1) / cards.length) * 100;
   const dueCount = cards.filter((card) => {
     const review = progress.reviews[card.id] ?? getDefaultReviewState(card.id);
     return review.nextReviewAt <= viewTimestamp;
@@ -39,56 +56,99 @@ export default function FlashcardsPage() {
     latest.lastSetId = setId;
     writeProgress(latest);
 
+    if (index + 1 >= cards.length) {
+      setDone(true);
+      setRevealed(false);
+      return;
+    }
+
     setRevealed(false);
-    setIndex((prev) => (prev + 1) % cards.length);
+    setIndex((prev) => prev + 1);
+  }
+
+  function restartSession() {
+    setIndex(0);
+    setRevealed(false);
+    setDone(false);
+  }
+
+  if (done) {
+    return (
+      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
+        <Card className="animate-pop-in border-emerald-200 bg-emerald-50/90 dark:border-emerald-900/60 dark:bg-emerald-950/30">
+          <CardHeader>
+            <CardTitle className="text-3xl font-black dark:text-zinc-100">Set Tamamlandı</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-zinc-700 dark:text-zinc-300">
+              {setItem.title} setindeki {cards.length} kartın tamamını bitirdin.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button className="interactive-lift" onClick={restartSession}>
+                Aynı seti yeniden başlat
+              </Button>
+              <Link
+                href="/"
+                className="interactive-lift inline-flex h-8 items-center justify-center rounded-lg border border-input bg-background px-2.5 text-sm font-medium transition-colors hover:bg-muted dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+              >
+                Ana sayfaya dön
+              </Link>
+              <Link
+                href={`/quiz/${setId}`}
+                className="interactive-lift inline-flex h-8 items-center justify-center rounded-lg border border-input bg-background px-2.5 text-sm font-medium transition-colors hover:bg-muted dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+              >
+                Quiz’e geç
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+    );
   }
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
-      <header className="flex flex-wrap items-center justify-between gap-2">
+      <header className="animate-fade-up flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-sm uppercase tracking-[0.2em] text-cyan-700">Flashcard Modu</p>
-          <h1 className="mt-2 text-2xl font-bold">{setItem.title}</h1>
+          <p className="text-sm uppercase tracking-[0.2em] text-cyan-700">Kart Modu</p>
+          <h1 className="mt-2 text-2xl font-bold dark:text-zinc-100">{setItem.title}</h1>
         </div>
-        <p className="rounded-full bg-cyan-100 px-4 py-2 text-sm font-semibold text-cyan-800">
-          Bugun tekrar: {dueCount}
-        </p>
+        <Badge className="bg-cyan-100 px-4 py-2 text-sm font-semibold text-cyan-800 hover:bg-cyan-100 dark:bg-cyan-900 dark:text-cyan-200 dark:hover:bg-cyan-900">
+          Bugün tekrar: {dueCount}
+        </Badge>
       </header>
 
-      <section className="rounded-3xl border border-cyan-100 bg-white/80 p-8 shadow-lg backdrop-blur">
-        <p className="text-sm text-zinc-500">Kart {index + 1} / {cards.length}</p>
-        <h2 className="mt-5 text-4xl font-black tracking-wide text-zinc-900">{current.russian}</h2>
-
-        {revealed ? (
-          <p className="mt-5 text-xl text-zinc-700">{current.turkish}</p>
-        ) : (
-          <button className="mt-5 rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold" onClick={() => setRevealed(true)}>
-            Anlami goster
-          </button>
-        )}
-
-        <div className="mt-6 flex flex-wrap gap-3">
-          <button
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-            onClick={() => speakRussian(current.russian)}
-            disabled={!canSpeak()}
-          >
-            Telaffuzu dinle
-          </button>
-        </div>
-      </section>
+      <Card key={current.id} className="animate-pop-in border-cyan-100 bg-white/85 dark:border-cyan-900/60 dark:bg-zinc-900/80">
+        <CardHeader>
+          <div className="flex items-center justify-between gap-2">
+            <Badge variant="secondary">Kart {index + 1} / {cards.length}</Badge>
+            <Badge variant="outline">Set: {setItem.level}</Badge>
+          </div>
+          <Progress className="mt-3" value={progressRate} />
+          <CardTitle className="mt-4 text-4xl font-black tracking-wide text-zinc-900 dark:text-zinc-100">{current.russian}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {revealed ? (
+            <p className="text-xl text-zinc-700 dark:text-zinc-300">{current.turkish}</p>
+          ) : (
+            <Button variant="outline" onClick={() => setRevealed(true)}>
+              Anlamı göster
+            </Button>
+          )}
+        </CardContent>
+      </Card>
 
       {revealed ? (
-        <section className="grid gap-3 sm:grid-cols-3">
-          <button className="rounded-xl bg-rose-100 px-4 py-3 text-sm font-semibold text-rose-900" onClick={() => handleAnswer(2)}>
-            Zorlandim
-          </button>
-          <button className="rounded-xl bg-amber-100 px-4 py-3 text-sm font-semibold text-amber-900" onClick={() => handleAnswer(3)}>
+        <section className="animate-fade-up grid gap-3 sm:grid-cols-3">
+          <Button className="interactive-lift h-auto bg-rose-100 px-4 py-3 text-sm font-semibold text-rose-900 hover:bg-rose-200" onClick={() => handleAnswer(2)}>
+            Zorlandım
+          </Button>
+          <Button className="interactive-lift h-auto bg-amber-100 px-4 py-3 text-sm font-semibold text-amber-900 hover:bg-amber-200" onClick={() => handleAnswer(3)}>
             Orta
-          </button>
-          <button className="rounded-xl bg-emerald-100 px-4 py-3 text-sm font-semibold text-emerald-900" onClick={() => handleAnswer(5)}>
+          </Button>
+          <Button className="interactive-lift h-auto bg-emerald-100 px-4 py-3 text-sm font-semibold text-emerald-900 hover:bg-emerald-200" onClick={() => handleAnswer(5)}>
             Kolay
-          </button>
+          </Button>
         </section>
       ) : null}
     </main>
