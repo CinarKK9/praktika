@@ -92,7 +92,7 @@ export function SettingsDropdown() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen} modal={false}>
+      <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
         <AlertDialogContent size="sm">
           <AlertDialogHeader>
             <AlertDialogTitle>İlerleme sıfırlansın mı?</AlertDialogTitle>
@@ -156,7 +156,7 @@ export function MobileSettingsPanel() {
         </button>
       </div>
 
-      <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen} modal={false}>
+      <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
         <AlertDialogContent size="sm">
           <AlertDialogHeader>
             <AlertDialogTitle>İlerleme sıfırlansın mı?</AlertDialogTitle>
