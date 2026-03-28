@@ -91,7 +91,7 @@ export default function Home() {
           <div className="rounded-2xl bg-white/55 p-3 dark:bg-zinc-900/55">
             <Image
               src="/rs-tr.jpg"
-              alt="Türkiye ve Rusya arasındaki dostluk köprüsünü gösteren harita"
+              alt="Türkiye ve Rusya bayragi"
               width={860}
               height={520}
               className="h-auto w-full rounded-xl"
