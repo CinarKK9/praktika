@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "react-simple-keyboard/build/css/index.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -143,6 +144,46 @@ body[data-scroll-locked] {
   background-image: linear-gradient(180deg, #0b1020 0%, #111827 56%, #1f1129 100%);
 }
 
+.quiz-ru-keyboard {
+  background: transparent;
+  box-shadow: none;
+}
+
+.quiz-ru-keyboard .hg-button {
+  border-radius: 0.5rem;
+  border: 1px solid rgb(212 212 216);
+  background: rgb(255 255 255 / 0.9);
+  box-shadow: none;
+  color: rgb(39 39 42);
+  font-weight: 600;
+}
+
+.quiz-ru-keyboard .hg-button:hover {
+  background: rgb(244 244 245);
+}
+
+.quiz-ru-keyboard .hg-function-btn {
+  background: rgb(244 244 245 / 0.95) !important;
+}
+
+.quiz-ru-keyboard .hg-space-btn {
+  min-width: 10rem;
+}
+
+.dark .quiz-ru-keyboard .hg-button {
+  border-color: rgb(82 82 91);
+  background: rgb(39 39 42 / 0.92);
+  color: rgb(244 244 245);
+}
+
+.dark .quiz-ru-keyboard .hg-button:hover {
+  background: rgb(63 63 70);
+}
+
+.dark .quiz-ru-keyboard .hg-function-btn {
+  background: rgb(63 63 70 / 0.95) !important;
+}
+
 
 @layer base {
   * {
@@ -158,9 +199,87 @@ body[data-scroll-locked] {
 
 @media (max-width: 767px) {
   body {
-    /* Mobile tarayicilarda fixed arka plan titresebildigi icin scroll ile birlikte akar. */
     background-attachment: scroll;
-    background-size: 100% 100%;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: top center;
+  }
+
+  .dark body {
+    background-image: none;
+    background-color: #090d1a;
+  }
+
+  .dark .bg-blob,
+  .dark .bg-wash {
+    display: none !important;
+  }
+
+  main[class*="px-4"] {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  main {
+    gap: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  section,
+  article, .dashboard-card {
+    border-width: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  .wordsets-top-border {
+    border-top-width: 1px !important;
+    border-left-width: 0 !important;
+    border-right-width: 0 !important;
+    border-bottom-width: 0 !important;
+    border-top-style: solid !important;
+  }
+
+  .wordsets-top-border-dashed {
+    border-top-width: 1px !important;
+    border-left-width: 0 !important;
+    border-right-width: 0 !important;
+    border-bottom-width: 0 !important;
+    border-top-style: dashed !important;
+  }
+
+  section:has(> article),
+  section:has(> button),
+  section:has(> .dashboard-card),
+  div:has(> article) {
+    gap: 0 !important;
+  }
+
+  main :is(div, section, article, header, .dashboard-card, [data-slot="card"])[class*="rounded"] {
+    border-radius: 0 !important;
+  }
+
+  main > header {
+    border-width: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .custom-set-add-button {
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  main .custom-set-add-button .custom-set-add-icon-box {
+    border-radius: var(--radius-xl) !important;
+  }
+
+  main div.wordsets-image-frame.wordsets-image-frame {
+    border-radius: var(--radius-xl) !important;
+    overflow: hidden !important;
   }
 }
 
@@ -302,6 +421,7 @@ body[data-scroll-locked] {
     position: absolute;
     inset: 0;
     background: linear-gradient(120deg, rgb(220 38 38 / 12%), rgb(59 130 246 / 12%), rgb(248 250 252 / 8%));
+    background-repeat: no-repeat;
     background-size: 200% 200%;
     mix-blend-mode: soft-light;
     animation: wash-shift 18s linear infinite;
@@ -315,6 +435,7 @@ body[data-scroll-locked] {
     box-shadow: 0 0 0 1px rgb(255 255 255 / 22%) inset;
     animation: confetti-burst 1400ms cubic-bezier(0.08, 0.88, 0.2, 1) both;
   }
+
 }
 
 @media (prefers-reduced-motion: reduce) {

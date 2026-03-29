@@ -54,23 +54,24 @@ export function MobileNavMenu() {
 
       <div
         className={cn(
-          "fixed inset-x-0 top-[72px] z-30 border-b border-zinc-200 bg-white shadow-none backdrop-blur-none transition-all duration-300 ease-out dark:border-white/10 dark:bg-zinc-950/95 dark:shadow-xl dark:backdrop-blur-md",
+          "fixed inset-x-0 z-30 border-b border-zinc-200 bg-white shadow-none backdrop-blur-none transition-all duration-300 ease-out dark:border-white/10 dark:bg-zinc-950/95 dark:shadow-xl dark:backdrop-blur-md",
           open ? "translate-y-0 opacity-100" : "-translate-y-5 opacity-0 pointer-events-none",
         )}
+        style={{ top: 48 }}
       >
         <div className="mx-auto w-full max-w-6xl px-4 pb-4 pt-3 sm:px-8">
           <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">Menü</p>
           <Link
             href="/review"
             onClick={() => setOpen(false)}
-            className="block rounded-md px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 dark:text-rose-200 dark:hover:bg-rose-900/30"
+            className="mt-1 block rounded-md px-3 py-2 text-sm font-semibold text-indigo-800 transition hover:bg-indigo-100 dark:text-indigo-200 dark:hover:bg-indigo-900/30"
           >
             Tekrar Merkezi
           </Link>
           <Link
             href="/dashboard"
             onClick={() => setOpen(false)}
-            className="mt-1 block rounded-md px-3 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
+            className="mt-1 block rounded-md px-3 py-2 text-sm font-semibold text-blue-800 transition hover:bg-blue-100 dark:text-blue-200 dark:hover:bg-blue-900/30"
           >
             İlerleme Merkezi
           </Link>

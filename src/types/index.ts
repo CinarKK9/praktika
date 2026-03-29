@@ -16,6 +16,13 @@ export type Flashcard = {
   example?: string;
 };
 
+export type CustomWordSet = {
+  id: string;
+  name: string;
+  cardIds: string[];
+  createdAt: number;
+};
+
 export type ReviewState = {
   cardId: string;
   repetitions: number;
@@ -39,4 +46,7 @@ export type StoredProgress = {
   quizAttempts: QuizAttempt[];
   lastSetId?: string;
   autoPronounce: boolean;
+  dailyGoal?: number;
+  dailyIntensity?: "dusuk" | "orta" | "yogun";
+  writingTolerance?: "strict" | "normal" | "flexible";
 };

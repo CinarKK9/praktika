@@ -29,7 +29,7 @@ export default function Home() {
 
   return (
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-8 sm:px-8 sm:py-10">
-      <section className="animate-fade-up rounded-3xl bg-white/38 p-8 shadow-sm backdrop-blur-sm dark:bg-zinc-900/35">
+      <section className="animate-fade-up rounded-3xl bg-white/38 p-5 shadow-sm backdrop-blur-sm dark:bg-zinc-900/35">
         <p className="text-sm uppercase tracking-[0.2em] text-rose-700 dark:text-rose-300">Praktika&apos;ya Hoş geldin</p>
         <h1 className="mt-4 max-w-2xl text-4xl font-black leading-tight text-zinc-900 dark:text-zinc-100">
           Türkiye-Rusya dostluğunu dil ile güçlendiren Rusça öğrenme deneyimi
@@ -38,11 +38,26 @@ export default function Home() {
           Seviyene uygun kelime setleriyle çalış, kısa testlerle bilgini pekiştir ve iki ülke arasında iletişimi güçlendirecek pratik bir dil akışıyla ilerle.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link className="interactive-lift interactive-pulse rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-bold text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" href="/wordsets">
+          <Link className="interactive-lift interactive-pulse rounded-xl border px-5 py-3 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 min-w-[180px] text-center" href="/wordsets">
             Kelime setlerini aç
           </Link>
+          <Link
+            href="/review"
+            className="interactive-lift rounded-xl border px-5 py-3 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 min-w-[180px] text-center border-indigo-300 bg-indigo-50 text-indigo-800 hover:bg-indigo-100 dark:border-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-200"
+          >
+            Tekrar Merkezi
+          </Link>
+          <Link
+            href="/dashboard"
+            className="interactive-lift rounded-xl border px-5 py-3 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 min-w-[180px] text-center border-blue-300 bg-blue-50 text-blue-800 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-200"
+          >
+            İlerleme Merkezi
+          </Link>
           {progress.lastSetId ? (
-            <Link className="interactive-lift rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-bold dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" href={`/flashcards/${progress.lastSetId}`}>
+            <Link
+              className="interactive-lift rounded-xl border px-5 py-3 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 min-w-[180px] text-center border-zinc-300 bg-white text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+              href={`/flashcards/${progress.lastSetId}`}
+            >
               Son çalışmaya dön
             </Link>
           ) : null}
@@ -64,7 +79,7 @@ export default function Home() {
         </article>
       </section>
 
-      <section className="rounded-3xl bg-white/40 p-6 shadow-sm backdrop-blur-sm dark:bg-zinc-900/35">
+      <section className="rounded-3xl bg-white/40 p-5 shadow-sm backdrop-blur-sm dark:bg-zinc-900/35">
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <div>
             <p className="text-sm uppercase tracking-[0.2em] text-rose-700 dark:text-rose-300">Kültür Köprüsü</p>
@@ -101,7 +116,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="rounded-2xl bg-white/40 p-6 shadow-sm backdrop-blur-sm dark:bg-zinc-900/35">
+      <section className="rounded-2xl bg-white/40 p-5 shadow-sm backdrop-blur-sm dark:bg-zinc-900/35">
         <h2 className="text-xl font-bold dark:text-zinc-100">Dostluk Odaklı Öğrenme Başlıkları</h2>
         <ul className="mt-3 space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
           <li>Selamlama ve tanışma diyalogları</li>

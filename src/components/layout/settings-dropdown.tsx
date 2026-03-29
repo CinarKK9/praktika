@@ -20,7 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Settings2 } from "lucide-react";
+import { Settings } from "lucide-react";
 import { STORAGE_KEYS } from "@/lib/storage/keys";
 import { clearProgress } from "@/lib/storage/local-storage";
 
@@ -70,9 +70,9 @@ export function SettingsDropdown() {
         <DropdownMenuTrigger
           aria-label="Ayarlar"
           title="Ayarlar"
-          className="inline-flex size-8 items-center justify-center rounded-lg border border-input bg-background transition-colors hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="inline-flex size-8 items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-800 transition-colors hover:bg-zinc-50 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
         >
-          <Settings2 className="size-4" />
+          <Settings className="size-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuGroup>

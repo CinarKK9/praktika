@@ -115,7 +115,7 @@ export function TopLoadingBar() {
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-[70] h-1.5">
       <div
-        className="h-full origin-left rounded-r-full bg-gradient-to-r from-orange-500 via-cyan-500 to-fuchsia-500 shadow-[0_0_18px_rgba(6,182,212,0.45)] transition-[width,opacity] duration-200"
+        className="h-full origin-left rounded-r-full transition-[width,opacity] duration-200 bg-gradient-to-r from-rose-500 via-white to-blue-500 shadow-[0_0_18px_rgba(59,130,246,0.25)]"
         style={{
           width: `${progress}%`,
           opacity: active || progress > 0 ? 1 : 0,

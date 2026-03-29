@@ -5,7 +5,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CountUp } from "@/components/ui/count-up";
 import { LineChart } from "@/components/ui/line-chart";
-import { readProgress } from "@/lib/storage/local-storage";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { readProgress, writeProgress } from "@/lib/storage/local-storage";
 import { isDue } from "@/lib/sm2/algorithm";
 import { getAllCards, getWordSetById } from "@/lib/data/wordsets";
 import type { StoredProgress } from "@/types";
@@ -26,6 +33,16 @@ function formatDate(timestamp: number): string {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+function isSameDay(timestampA: number, timestampB: number): boolean {
+  const dateA = new Date(timestampA);
+  const dateB = new Date(timestampB);
+  return (
+    dateA.getFullYear() === dateB.getFullYear() &&
+    dateA.getMonth() === dateB.getMonth() &&
+    dateA.getDate() === dateB.getDate()
+  );
 }
 
 function getKnowledgeBgColor(score: number): string {
@@ -54,10 +71,34 @@ function getKnowledgeLabel(score: number): string {
 export default function DashboardPage() {
   const [progress, setProgress] = useState<StoredProgress>(INITIAL_PROGRESS);
   const [nowTs, setNowTs] = useState(0);
+  const [dailyPlan, setDailyPlan] = useState<"sakin" | "orta" | "ciddi">("orta");
+  const [settingsSaved, setSettingsSaved] = useState(false);
+
+  const minutesByPlan: Record<"sakin" | "orta" | "ciddi", number> = {
+    sakin: 15,
+    orta: 30,
+    ciddi: 60,
+  };
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
-      setProgress(readProgress());
+      const stored = readProgress();
+      setProgress(stored);
+
+      const inferredPlan =
+        typeof stored.dailyGoal === "number"
+          ? stored.dailyGoal <= 20
+            ? "sakin"
+            : stored.dailyGoal <= 40
+              ? "orta"
+              : "ciddi"
+          : stored.dailyIntensity === "dusuk"
+            ? "sakin"
+            : stored.dailyIntensity === "yogun"
+              ? "ciddi"
+              : "orta";
+
+      setDailyPlan(inferredPlan);
       setNowTs(Date.now());
     });
 
@@ -70,6 +111,10 @@ export default function DashboardPage() {
     const dueCards = reviewEntries.filter((review) => isDue(review)).length;
 
     const attempts = [...progress.quizAttempts].sort((a, b) => a.completedAt - b.completedAt);
+    const todayAttempts = attempts.filter((attempt) => isSameDay(attempt.completedAt, nowTs));
+    const todayAttemptsCount = todayAttempts.length;
+    const todayReviewCount = reviewEntries.filter((review) => isSameDay(review.lastReviewAt, nowTs)).length;
+    const todayCompleted = todayAttemptsCount + todayReviewCount;
     const recentAttempts = attempts.slice(-7);
     const averageScorePercent = attempts.length
       ? Math.round(
@@ -148,6 +193,7 @@ export default function DashboardPage() {
     return {
       reviewedCards,
       dueCards,
+      todayCompleted,
       totalAttempts: attempts.length,
       averageScorePercent,
       recentAttempts,
@@ -157,19 +203,47 @@ export default function DashboardPage() {
     };
   }, [progress, nowTs]);
 
+  useEffect(() => {
+    if (settingsSaved) {
+      const timer = window.setTimeout(() => setSettingsSaved(false), 1600);
+      return () => window.clearTimeout(timer);
+    }
+  }, [settingsSaved]);
+
+  function persistDailySettings() {
+    const dailyGoal = minutesByPlan[dailyPlan];
+    const nextProgress: StoredProgress = {
+      ...progress,
+      dailyGoal,
+      dailyIntensity: dailyPlan === "sakin" ? "dusuk" : dailyPlan === "orta" ? "orta" : "yogun",
+    };
+    writeProgress(nextProgress);
+    setProgress(nextProgress);
+    setSettingsSaved(true);
+  }
+
+  const dailyGoal = minutesByPlan[dailyPlan];
+  const todayEstimatedMinutes = stats.todayCompleted;
+  const dailyProgressPercent = dailyGoal > 0 ? Math.min(100, Math.round((stats.todayCompleted / dailyGoal) * 100)) : 0;
+  const hasConfiguredPlan = typeof progress.dailyGoal === "number";
+  const dailyPlanLabel =
+    dailyPlan === "sakin" ? "Sakin (15 dk/gün)" : dailyPlan === "orta" ? "Orta (30 dk/gün)" : "Ciddi (60 dk/gün)";
+
   const totalMode = stats.modeCounts["multiple-choice"] + stats.modeCounts.writing;
   const multipleChoiceRatio = totalMode ? Math.round((stats.modeCounts["multiple-choice"] / totalMode) * 100) : 0;
   const writingRatio = totalMode ? 100 - multipleChoiceRatio : 0;
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
-      <header>
-        <p className="text-sm uppercase tracking-[0.2em] text-rose-700 dark:text-rose-300">Öğrenme Paneli</p>
-        <h1 className="mt-2 text-3xl font-black text-zinc-900 dark:text-zinc-100">Öğrenme İstatistikleri</h1>
+      <header className="animate-fade-up flex flex-col items-start gap-2 rounded-3xl bg-white/38 p-5 shadow-sm backdrop-blur-sm dark:bg-zinc-900/35">
+        <div>
+          <p className="text-sm uppercase tracking-[0.2em] text-rose-700 dark:text-rose-300">Öğrenme Paneli</p>
+          <h1 className="mt-2 text-3xl font-black text-zinc-900 dark:text-zinc-100">Öğrenme İstatistikleri</h1>
+        </div>
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="bg-white/80 dark:bg-zinc-900/70">
+        <Card className="dashboard-card lg:bg-white/80 bg-white/38 backgdrop-blur-sm dark:bg-zinc-900/70">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">Takip Edilen Kart</CardTitle>
           </CardHeader>
@@ -178,7 +252,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-white/80 dark:bg-zinc-900/70">
+        <Card className="dashboard-card lg:bg-white/80 bg-white/38 backgdrop-blur-sm dark:bg-zinc-900/70">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">Tekrarı Gelen Kart</CardTitle>
           </CardHeader>
@@ -187,7 +261,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-white/80 dark:bg-zinc-900/70">
+        <Card className="dashboard-card lg:bg-white/80 bg-white/38 backgdrop-blur-sm dark:bg-zinc-900/70">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">Toplam Quiz</CardTitle>
           </CardHeader>
@@ -196,7 +270,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-white/80 dark:bg-zinc-900/70">
+        <Card className="dashboard-card lg:bg-white/80 bg-white/38 backgdrop-blur-sm dark:bg-zinc-900/70">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">Ortalama Başarı</CardTitle>
           </CardHeader>
@@ -207,7 +281,7 @@ export default function DashboardPage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-3">
-        <Card className="bg-white/80 dark:bg-zinc-900/70 lg:col-span-2">
+        <Card className="dashboard-card lg:bg-white/80 bg-white/38 backgdrop-blur-sm dark:bg-zinc-900/70 lg:col-span-2">
           <CardHeader>
             <CardTitle>Quiz Performans Grafiği</CardTitle>
           </CardHeader>
@@ -226,7 +300,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-white/80 dark:bg-zinc-900/70">
+        <Card className="lg:bg-white/80 bg-white/38 backgdrop-blur-sm dark:bg-zinc-900/70">
           <CardHeader>
             <CardTitle>Quiz Mod Dağılımı</CardTitle>
           </CardHeader>
@@ -237,7 +311,7 @@ export default function DashboardPage() {
                   <span className="text-zinc-700 dark:text-zinc-200">Çoktan seçmeli</span>
                   <span className="text-zinc-600 dark:text-zinc-300">%{multipleChoiceRatio}</span>
                 </div>
-                <div className="h-2 rounded-full bg-zinc-200 dark:bg-zinc-800">
+                <div className="dashboard-progress-bar h-2 rounded-full bg-zinc-200 dark:bg-zinc-800">
                   <div className="h-full rounded-full bg-blue-500" style={{ width: `${multipleChoiceRatio}%` }} />
                 </div>
               </div>
@@ -247,7 +321,7 @@ export default function DashboardPage() {
                   <span className="text-zinc-700 dark:text-zinc-200">Yazma</span>
                   <span className="text-zinc-600 dark:text-zinc-300">%{writingRatio}</span>
                 </div>
-                <div className="h-2 rounded-full bg-zinc-200 dark:bg-zinc-800">
+                <div className="dashboard-progress-bar h-2 rounded-full bg-zinc-200 dark:bg-zinc-800">
                   <div className="h-full rounded-full bg-rose-500" style={{ width: `${writingRatio}%` }} />
                 </div>
               </div>
@@ -256,7 +330,7 @@ export default function DashboardPage() {
         </Card>
       </section>
 
-      <Card className="bg-white/80 dark:bg-zinc-900/70">
+      <Card className="lg:bg-white/80 bg-white/38 backgdrop-blur-sm dark:bg-zinc-900/70">
         <CardHeader>
           <CardTitle>Set Bazlı Başarı</CardTitle>
         </CardHeader>
@@ -271,7 +345,7 @@ export default function DashboardPage() {
                     <span className="text-zinc-700 dark:text-zinc-200">{setItem.title}</span>
                     <span className="text-zinc-600 dark:text-zinc-300">%{setItem.percentage}</span>
                   </div>
-                  <div className="h-2 rounded-full bg-zinc-200 dark:bg-zinc-800">
+                  <div className="dashboard-progress-bar h-2 rounded-full bg-zinc-200 dark:bg-zinc-800">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-rose-500 to-blue-500"
                       style={{ width: `${setItem.percentage}%` }}
@@ -284,7 +358,7 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      <Card className="bg-white/80 dark:bg-zinc-900/70">
+      <Card className="lg:bg-white/80 bg-white/38 backgdrop-blur-sm dark:bg-zinc-900/70">
         <CardHeader>
           <CardTitle>Kelime Bilme Seviyesi</CardTitle>
         </CardHeader>
@@ -336,6 +410,72 @@ export default function DashboardPage() {
           >
             Tekrar Et
           </Link>
+        </CardContent>
+      </Card>
+
+      <Card
+        className={[
+          "lg:bg-white/80 bg-white/38 backgdrop-blur-sm dark:bg-zinc-900/70",
+          hasConfiguredPlan ? "" : "ring-2 ring-rose-300 dark:ring-rose-700",
+        ].join(" ")}
+      >
+        <CardHeader>
+          <CardTitle>Günlük Program Ayarı</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {!hasConfiguredPlan ? (
+            <p className="text-sm text-rose-700 dark:text-rose-300">
+              İlk kez ayarlamak için günlük planını seç.
+            </p>
+          ) : null}
+
+          <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-zinc-600 dark:text-zinc-300">Hedef süre (dk/gün)</span>
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger
+                  className="inline-flex items-center justify-between rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                  aria-label="Hedef süre"
+                >
+                  {dailyPlanLabel}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuRadioGroup
+                    value={dailyPlan}
+                    onValueChange={(value) => setDailyPlan(value as "sakin" | "orta" | "ciddi")}
+                  >
+                    <DropdownMenuRadioItem value="sakin">Sakin (15 dk/gün)</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="orta">Orta (30 dk/gün)</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="ciddi">Ciddi (60 dk/gün)</DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </label>
+
+            <div className="flex items-end">
+              <button
+                type="button"
+                onClick={persistDailySettings}
+                className="inline-flex h-10 items-center rounded-md bg-zinc-900 px-4 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
+              >
+                Ayarları kaydet
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-1 flex items-center justify-between text-sm">
+              <span className="text-zinc-700 dark:text-zinc-200">Bugünkü tahmini süre</span>
+              <span className="text-zinc-600 dark:text-zinc-300">
+                {todayEstimatedMinutes}/{dailyGoal} dk (%{dailyProgressPercent})
+              </span>
+            </div>
+            <div className="h-2 rounded-full bg-zinc-200 dark:bg-zinc-800">
+              <div className="h-full rounded-full bg-gradient-to-r from-rose-500 to-blue-500" style={{ width: `${dailyProgressPercent}%` }} />
+            </div>
+          </div>
+
+          {settingsSaved ? <p className="text-xs text-blue-700 dark:text-blue-300">Ayarlar kaydedildi.</p> : null}
         </CardContent>
       </Card>
     </main>

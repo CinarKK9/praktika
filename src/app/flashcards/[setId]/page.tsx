@@ -1,28 +1,85 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { notFound, useParams } from "next/navigation";
-import { getCardsBySetId, getWordSetById } from "@/lib/data/wordsets";
-import { applySm2, getDefaultReviewState, type QualityScore } from "@/lib/sm2/algorithm";
+import { useEffect, useState } from "react";
+import { notFound, useParams, useSearchParams } from "next/navigation";
+import { getCardExample, getCardsByIds, getCardsBySetId, getWordSetById } from "@/lib/data/wordsets";
+import { applySm2, getDefaultReviewState } from "@/lib/sm2/algorithm";
 import { readProgress, writeProgress } from "@/lib/storage/local-storage";
+import { speak, stopSpeech } from "@/lib/tts/speech";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { SpeakerButtonWrapper } from "@/components/ui/speaker-button-wrapper";
+import type { Flashcard, StoredProgress } from "@/types";
+
+function shuffleArray<T>(items: T[]): T[] {
+  const next = [...items];
+  for (let i = next.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [next[i], next[j]] = [next[j], next[i]];
+  }
+  return next;
+}
 
 export default function FlashcardsPage() {
   const params = useParams<{ setId: string }>();
+  const searchParams = useSearchParams();
   const setId = Array.isArray(params.setId) ? params.setId[0] : params.setId;
+  const customCardIds = (searchParams.get("cards") ?? "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const customSetName = (searchParams.get("name") ?? "").trim();
+  const isCustomMode = setId === "custom" && customCardIds.length > 0;
 
-  const setItem = getWordSetById(setId);
-  const cards = getCardsBySetId(setId);
+  const setItem =
+    getWordSetById(setId) ??
+    (isCustomMode
+      ? {
+          id: "custom",
+          title: customSetName || "Custom Flashcards",
+          description: "Seçilen kelimelerle oluşturulan özel set.",
+          level: "A1",
+          topic: "Custom",
+        }
+      : undefined);
 
+  const [cards, setCards] = useState<Flashcard[]>(() =>
+    isCustomMode ? getCardsByIds(customCardIds) : getCardsBySetId(setId),
+  );
+  const [progress, setProgress] = useState<StoredProgress | null>(null);
+  const [viewTimestamp, setViewTimestamp] = useState(0);
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [done, setDone] = useState(false);
-  const [viewTimestamp] = useState<number>(() => Date.now());
-  const [progress] = useState(() => readProgress());
+  const [showExample, setShowExample] = useState(false);
+
+  useEffect(() => {
+    const sourceCards = isCustomMode ? getCardsByIds(customCardIds) : getCardsBySetId(setId);
+    setCards(shuffleArray(sourceCards));
+    setProgress(readProgress());
+    setViewTimestamp(Date.now());
+    setIndex(0);
+    setRevealed(false);
+    setDone(false);
+    setShowExample(false);
+  }, [setId, isCustomMode, searchParams]);
+
+  useEffect(() => {
+    return () => {
+      stopSpeech();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!progress?.autoPronounce || !cards.length || !cards[index]) {
+      return;
+    }
+
+    speak(cards[index].russian, "ru-RU");
+  }, [progress?.autoPronounce, cards, index]);
 
   if (!setItem) {
     notFound();
@@ -30,7 +87,7 @@ export default function FlashcardsPage() {
 
   if (!cards.length) {
     return (
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
         <Card>
           <CardHeader>
             <CardTitle>Bu sette henüz kart bulunmuyor</CardTitle>
@@ -42,15 +99,17 @@ export default function FlashcardsPage() {
 
   const current = cards[index];
   const progressRate = ((index + 1) / cards.length) * 100;
-  const dueCount = cards.filter((card) => {
-    const review = progress.reviews[card.id] ?? getDefaultReviewState(card.id);
-    return review.nextReviewAt <= viewTimestamp;
-  }).length;
+  const dueCount = progress
+    ? cards.filter((card) => {
+        const review = progress.reviews[card.id] ?? getDefaultReviewState(card.id);
+        return review.nextReviewAt <= viewTimestamp;
+      }).length
+    : 0;
 
-  function handleAnswer(quality: QualityScore) {
+  function handleContinue() {
     const latest = readProgress();
     const currentReview = latest.reviews[current.id] ?? getDefaultReviewState(current.id);
-    const nextReview = applySm2(currentReview, quality);
+    const nextReview = applySm2(currentReview, 4);
 
     latest.reviews[current.id] = nextReview;
     latest.lastSetId = setId;
@@ -63,6 +122,7 @@ export default function FlashcardsPage() {
     }
 
     setRevealed(false);
+    setShowExample(false);
     setIndex((prev) => prev + 1);
   }
 
@@ -70,6 +130,7 @@ export default function FlashcardsPage() {
     setIndex(0);
     setRevealed(false);
     setDone(false);
+    setShowExample(false);
   }
 
   if (done) {
@@ -107,7 +168,7 @@ export default function FlashcardsPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
       <header className="animate-fade-up flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-sm uppercase tracking-[0.2em] text-cyan-700">Kart Modu</p>
@@ -118,18 +179,23 @@ export default function FlashcardsPage() {
         </Badge>
       </header>
 
-      <Card key={current.id} className="animate-pop-in border-cyan-100 bg-white/85 dark:border-cyan-900/60 dark:bg-zinc-900/80">
+      <Card key={current.id} className="animate-pop-in max-sm:ring-0 border-cyan-100 bg-white/85 dark:border-cyan-900/60 dark:bg-zinc-900/80">
         <CardHeader>
           <div className="flex items-center justify-between gap-2">
             <Badge variant="secondary">Kart {index + 1} / {cards.length}</Badge>
             <Badge variant="outline">Set: {setItem.level}</Badge>
           </div>
           <Progress className="mt-3" value={progressRate} />
-          <CardTitle className="mt-4 text-4xl font-black tracking-wide text-zinc-900 dark:text-zinc-100">{current.russian}</CardTitle>
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <CardTitle className="text-4xl font-black tracking-wide text-zinc-900 dark:text-zinc-100">{current.russian}</CardTitle>
+            <SpeakerButtonWrapper text={current.russian} language="ru-RU" size="md" />
+          </div>
         </CardHeader>
         <CardContent>
           {revealed ? (
-            <p className="text-xl text-zinc-700 dark:text-zinc-300">{current.turkish}</p>
+            <div className="space-y-3">
+              <p className="text-xl text-zinc-700 dark:text-zinc-300">{current.turkish}</p>
+            </div>
           ) : (
             <Button variant="outline" onClick={() => setRevealed(true)}>
               Anlamı göster
@@ -139,15 +205,9 @@ export default function FlashcardsPage() {
       </Card>
 
       {revealed ? (
-        <section className="animate-fade-up grid gap-3 sm:grid-cols-3">
-          <Button className="interactive-lift h-auto bg-rose-100 px-4 py-3 text-sm font-semibold text-rose-900 hover:bg-rose-200" onClick={() => handleAnswer(2)}>
-            Zorlandım
-          </Button>
-          <Button className="interactive-lift h-auto bg-amber-100 px-4 py-3 text-sm font-semibold text-amber-900 hover:bg-amber-200" onClick={() => handleAnswer(3)}>
-            Orta
-          </Button>
-          <Button className="interactive-lift h-auto bg-emerald-100 px-4 py-3 text-sm font-semibold text-emerald-900 hover:bg-emerald-200" onClick={() => handleAnswer(5)}>
-            Kolay
+        <section className="animate-fade-up">
+          <Button className="h-auto w-full bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200" onClick={handleContinue}>
+            {index + 1 >= cards.length ? "Seti bitir" : "Devam et"}
           </Button>
         </section>
       ) : null}

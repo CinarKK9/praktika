@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { getAllCards, getWordSetById } from "@/lib/data/wordsets";
-import { applySm2, getDefaultReviewState, type QualityScore } from "@/lib/sm2/algorithm";
+import { applySm2, getDefaultReviewState } from "@/lib/sm2/algorithm";
 import { readProgress, writeProgress } from "@/lib/storage/local-storage";
 import type { Flashcard, StoredProgress } from "@/types";
 
@@ -56,7 +56,7 @@ export default function ReviewPage() {
 
   if (dueCards.length === 0) {
     return (
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
         <Card className="bg-white/85 dark:bg-zinc-900/70">
           <CardHeader>
             <CardTitle>Tekrar Merkezi</CardTitle>
@@ -78,12 +78,12 @@ export default function ReviewPage() {
   const current = dueCards[index]?.card;
   const progressRate = ((index + 1) / dueCards.length) * 100;
 
-  function handleAnswer(quality: QualityScore) {
+  function handleContinue() {
     if (!current) return;
 
     const latest = readProgress();
     const currentReview = latest.reviews[current.id] ?? getDefaultReviewState(current.id);
-    latest.reviews[current.id] = applySm2(currentReview, quality);
+    latest.reviews[current.id] = applySm2(currentReview, 4);
     latest.lastSetId = current.setId;
     writeProgress(latest);
 
@@ -99,7 +99,7 @@ export default function ReviewPage() {
 
   if (!current || done) {
     return (
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
         <Card className="border-emerald-200 bg-emerald-50/90 dark:border-emerald-900/60 dark:bg-emerald-950/30">
           <CardHeader>
             <CardTitle className="text-3xl font-black dark:text-zinc-100">Tekrar Tamamlandı</CardTitle>
@@ -129,7 +129,7 @@ export default function ReviewPage() {
   const setItem = getWordSetById(current.setId);
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-sm uppercase tracking-[0.2em] text-rose-700 dark:text-rose-300">Tekrar Merkezi</p>
@@ -140,7 +140,7 @@ export default function ReviewPage() {
         </Badge>
       </header>
 
-      <Card className="bg-white/85 dark:bg-zinc-900/80">
+      <Card className="max-sm:ring-0 bg-white/85 dark:bg-zinc-900/80">
         <CardHeader>
           <div className="flex items-center justify-between gap-2">
             <Badge variant="secondary">Kart {index + 1} / {dueCards.length}</Badge>
@@ -161,15 +161,9 @@ export default function ReviewPage() {
       </Card>
 
       {revealed ? (
-        <section className="grid gap-3 sm:grid-cols-3">
-          <Button className="h-auto bg-rose-100 px-4 py-3 text-sm font-semibold text-rose-900 hover:bg-rose-200" onClick={() => handleAnswer(2)}>
-            Zorlandım
-          </Button>
-          <Button className="h-auto bg-amber-100 px-4 py-3 text-sm font-semibold text-amber-900 hover:bg-amber-200" onClick={() => handleAnswer(3)}>
-            Orta
-          </Button>
-          <Button className="h-auto bg-emerald-100 px-4 py-3 text-sm font-semibold text-emerald-900 hover:bg-emerald-200" onClick={() => handleAnswer(5)}>
-            Kolay
+        <section>
+          <Button className="h-auto w-full bg-zinc-900 px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200" onClick={handleContinue}>
+            {index + 1 >= dueCards.length ? "Tekrarı bitir" : "Devam et"}
           </Button>
         </section>
       ) : null}
