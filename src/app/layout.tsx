@@ -6,6 +6,7 @@ import { ThemeInitializer } from "@/components/layout/theme-initializer";
 import { AnimatedBackground } from "@/components/layout/animated-background";
 import { TopLoadingBar } from "@/components/layout/top-loading-bar";
 import { DesktopAnimatedNavbar } from "@/components/layout/desktop-animated-navbar";
+import { Analytics } from "@vercel/analytics/next"
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -41,6 +42,7 @@ export default function RootLayout({
         <TopLoadingBar />
         <AnimatedBackground />
         <DesktopAnimatedNavbar />
+        <Analytics />
         <div className="relative z-10 flex flex-1 flex-col md:pt-24">{children}</div>
       </body>
     </html>
