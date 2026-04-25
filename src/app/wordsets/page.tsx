@@ -18,13 +18,17 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { readCustomWordSets, writeCustomWordSets } from "@/lib/storage/local-storage";
-import { X } from "lucide-react";
+import { MoreHorizontal, X } from "lucide-react";
 import type { CEFRLevel, CustomWordSet } from "@/types";
 import type { CSSProperties } from "react";
 
@@ -62,6 +66,7 @@ export default function WordSetsPage() {
   const [customSets, setCustomSets] = useState<CustomWordSet[]>([]);
   const [showCustomCreator, setShowCustomCreator] = useState(false);
   const [showDiscardWarning, setShowDiscardWarning] = useState(false);
+  const [setToDelete, setSetToDelete] = useState<CustomWordSet | null>(null);
   const [customSetName, setCustomSetName] = useState("");
   const [customQuery, setCustomQuery] = useState("");
   const [selectedCustomIds, setSelectedCustomIds] = useState<string[]>([]);
@@ -207,8 +212,31 @@ export default function WordSetsPage() {
     return `${basePath}?cards=${cardsParam}&name=${nameParam}`;
   }
 
+  function formatCustomDate(timestamp: number): string {
+    return new Date(timestamp).toLocaleDateString("tr-TR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  }
+
+  function requestDeleteCustomSet(setItem: CustomWordSet) {
+    setSetToDelete(setItem);
+  }
+
+  function confirmDeleteCustomSet() {
+    if (!setToDelete) {
+      return;
+    }
+
+    const nextSets = customSets.filter((item) => item.id !== setToDelete.id);
+    setCustomSets(nextSets);
+    writeCustomWordSets(nextSets);
+    setSetToDelete(null);
+  }
+
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-8 sm:px-8">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-0 max-sm:gap-0 sm:gap-6 px-0 max-sm:px-0 sm:px-4 py-0 max-sm:py-0 sm:py-8">
       <header className="animate-fade-up flex flex-col items-start gap-2 rounded-3xl bg-white/38 p-5 shadow-sm backdrop-blur-sm dark:bg-zinc-900/35">
         <div>
           <p className="text-sm uppercase tracking-[0.2em] text-amber-700">Kelime Setleri</p>
@@ -305,19 +333,6 @@ export default function WordSetsPage() {
           );
         })}
 
-        <button
-          type="button"
-          onClick={() => setShowCustomCreator(true)}
-          aria-label="Kendi setini oluştur"
-          className="custom-set-add-button wordsets-top-border-dashed flex h-full flex-col rounded-2xl border-x-0 border-b-0 border-dashed border-zinc-300 bg-white/65 p-5 text-left shadow-sm backdrop-blur transition hover:border-blue-400 hover:bg-blue-50/40 dark:border-zinc-700 dark:bg-zinc-900/60 dark:hover:border-blue-600 dark:hover:bg-blue-900/20"
-        >
-          <div className="custom-set-add-icon-box flex h-36 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800/70">
-            <span className="text-6xl font-light text-zinc-500 dark:text-zinc-300">+</span>
-          </div>
-          <h2 className="mt-4 text-xl font-semibold text-zinc-900 dark:text-zinc-100">Kendi setini ekle</h2>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">İsim ver, kelime seç ve kendi setini oluştur.</p>
-        </button>
-
         {filteredCustomSets.map((setItem, index) => (
           <article
             key={setItem.id}
@@ -328,15 +343,44 @@ export default function WordSetsPage() {
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ${customSetStyle.badge}`}>
                 ÖZEL
               </span>
-              <span className={`text-xs ${customSetStyle.topic}`}>Kendi setin</span>
+              <div className="flex items-center gap-2">
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger
+                    aria-label="Özel set menüsü"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-blue-200 bg-white/75 text-blue-700 transition hover:bg-white dark:border-blue-800 dark:bg-zinc-900/60 dark:text-blue-300"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel>Aksiyonlar</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        variant="destructive"
+                        onClick={() => requestDeleteCustomSet(setItem)}
+                      >
+                        Seti sil
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
             <div className="wordsets-image-frame mt-4 h-36 rounded-xl border border-blue-200 bg-gradient-to-br from-blue-100 via-cyan-100 to-sky-100 p-4 dark:border-blue-800 dark:from-blue-950 dark:via-cyan-950 dark:to-sky-950">
-              <p className="text-xs uppercase tracking-[0.12em] text-blue-700 dark:text-blue-300">Kişisel Set</p>
-              <p className="mt-2 line-clamp-2 text-lg font-bold text-zinc-900 dark:text-zinc-100">{setItem.name}</p>
-              <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">{setItem.cardIds.length} kelime</p>
+              <p className="text-xs uppercase tracking-[0.12em] text-blue-700 dark:text-blue-300">Set Özeti</p>
+              <div className="mt-3 space-y-2">
+                <div className="flex items-center justify-between rounded-md bg-white/70 px-3 py-2 text-sm dark:bg-zinc-900/45">
+                  <span className="text-zinc-600 dark:text-zinc-300">Kelime</span>
+                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">{setItem.cardIds.length}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-md bg-white/70 px-3 py-2 text-sm dark:bg-zinc-900/45">
+                  <span className="text-zinc-600 dark:text-zinc-300">Oluşturma</span>
+                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">{formatCustomDate(setItem.createdAt)}</span>
+                </div>
+              </div>
             </div>
-            <h2 className="mt-4 text-xl font-semibold">{setItem.name}</h2>
-            <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">Senin seçtiğin kelimelerle oluşan set.</p>
+            <h2 className="mt-4 text-xl font-semibold line-clamp-2">{setItem.name}</h2>
+            <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">Bu seti kart veya quiz modunda çalışabilirsin.</p>
             <div className="mt-auto flex gap-3 pt-6">
               <Link
                 className="interactive-lift rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
@@ -353,6 +397,19 @@ export default function WordSetsPage() {
             </div>
           </article>
         ))}
+
+        <button
+          type="button"
+          onClick={() => setShowCustomCreator(true)}
+          aria-label="Kendi setini oluştur"
+          className="custom-set-add-button wordsets-top-border-dashed flex h-full flex-col rounded-2xl border-x-0 border-b-0 border-dashed border-zinc-300 bg-white/65 p-5 text-left shadow-sm backdrop-blur transition hover:border-blue-400 hover:bg-blue-50/40 dark:border-zinc-700 dark:bg-zinc-900/60 dark:hover:border-blue-600 dark:hover:bg-blue-900/20"
+        >
+          <div className="custom-set-add-icon-box flex h-36 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800/70">
+            <span className="text-6xl font-light text-zinc-500 dark:text-zinc-300">+</span>
+          </div>
+          <h2 className="mt-4 text-xl font-semibold text-zinc-900 dark:text-zinc-100">Kendi setini ekle</h2>
+          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">İsim ver, kelime seç ve kendi setini oluştur.</p>
+        </button>
       </section>
 
       <AlertDialog open={showCustomCreator} onOpenChange={handleCustomCreatorOpenChange}>
@@ -443,6 +500,21 @@ export default function WordSetsPage() {
             <AlertDialogAction onClick={closeCustomCreatorWithoutSaving}>
               Kaydetmeden kapat
             </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={Boolean(setToDelete)} onOpenChange={(open) => !open && setSetToDelete(null)}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bu özel set silinsin mi?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-semibold">{setToDelete?.name}</span> kalıcı olarak silinecek.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="mt-2 flex justify-end gap-2">
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteCustomSet}>Seti sil</AlertDialogAction>
           </div>
         </AlertDialogContent>
       </AlertDialog>

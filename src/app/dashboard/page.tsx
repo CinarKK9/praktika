@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CountUp } from "@/components/ui/count-up";
 import { LineChart } from "@/components/ui/line-chart";
@@ -66,6 +67,48 @@ function getKnowledgeLabel(score: number): string {
   if (score >= 60) return "İyi";
   if (score >= 35) return "Orta";
   return "Kötü";
+}
+
+function startOfDayTimestamp(timestamp: number): number {
+  const date = new Date(timestamp);
+  date.setHours(0, 0, 0, 0);
+  return date.getTime();
+}
+
+function calculateDailyStreak(
+  reviewEntries: Array<{ lastReviewAt: number }>,
+  attempts: Array<{ completedAt: number }>,
+  nowTs: number,
+): number {
+  const dayMs = 24 * 60 * 60 * 1000;
+  const today = startOfDayTimestamp(nowTs || Date.now());
+  const activeDays = new Set<number>();
+
+  reviewEntries.forEach((review) => {
+    if (review.lastReviewAt > 0) {
+      activeDays.add(startOfDayTimestamp(review.lastReviewAt));
+    }
+  });
+
+  attempts.forEach((attempt) => {
+    if (attempt.completedAt > 0) {
+      activeDays.add(startOfDayTimestamp(attempt.completedAt));
+    }
+  });
+
+  if (activeDays.size === 0) {
+    return 0;
+  }
+
+  let cursor = activeDays.has(today) ? today : today - dayMs;
+  let streak = 0;
+
+  while (activeDays.has(cursor)) {
+    streak += 1;
+    cursor -= dayMs;
+  }
+
+  return streak;
 }
 
 export default function DashboardPage() {
@@ -157,6 +200,8 @@ export default function DashboardPage() {
       .sort((a, b) => b.percentage - a.percentage)
       .slice(0, 5);
 
+    const dailyStreak = calculateDailyStreak(reviewEntries, attempts, nowTs);
+
     const allCardsById = new Map(getAllCards().map((card) => [card.id, card]));
     const dayMs = 24 * 60 * 60 * 1000;
 
@@ -196,6 +241,7 @@ export default function DashboardPage() {
       todayCompleted,
       totalAttempts: attempts.length,
       averageScorePercent,
+      dailyStreak,
       recentAttempts,
       modeCounts,
       setPerformance,
@@ -234,16 +280,16 @@ export default function DashboardPage() {
   const writingRatio = totalMode ? 100 - multipleChoiceRatio : 0;
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
-      <header className="animate-fade-up flex flex-col items-start gap-2 rounded-3xl bg-white/38 p-5 shadow-sm backdrop-blur-sm dark:bg-zinc-900/35">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-0 max-sm:gap-0 sm:gap-6 px-0 max-sm:px-0 sm:px-8 py-0 max-sm:py-0 sm:py-8">
+      <header className="animate-fade-up flex flex-col items-start gap-2 rounded-3xl max-sm:rounded-none bg-white/80 p-5 max-sm:p-4 shadow-sm max-sm:shadow-none backdrop-blur-sm dark:bg-zinc-900/70">
         <div>
           <p className="text-sm uppercase tracking-[0.2em] text-rose-700 dark:text-rose-300">Öğrenme Paneli</p>
           <h1 className="mt-2 text-3xl font-black text-zinc-900 dark:text-zinc-100">Öğrenme İstatistikleri</h1>
         </div>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="dashboard-card lg:bg-white/80 bg-white/38 backgdrop-blur-sm dark:bg-zinc-900/70">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5 max-sm:gap-0">
+        <Card className="dashboard-card bg-white/80 backdrop-blur-sm dark:bg-zinc-900/70 max-sm:border-0 max-sm:rounded-none max-sm:shadow-none">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">Takip Edilen Kart</CardTitle>
           </CardHeader>
@@ -252,7 +298,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="dashboard-card lg:bg-white/80 bg-white/38 backgdrop-blur-sm dark:bg-zinc-900/70">
+        <Card className="dashboard-card bg-white/80 backdrop-blur-sm dark:bg-zinc-900/70 max-sm:border-0 max-sm:rounded-none max-sm:shadow-none">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">Tekrarı Gelen Kart</CardTitle>
           </CardHeader>
@@ -261,7 +307,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="dashboard-card lg:bg-white/80 bg-white/38 backgdrop-blur-sm dark:bg-zinc-900/70">
+        <Card className="dashboard-card bg-white/80 backdrop-blur-sm dark:bg-zinc-900/70 max-sm:border-0 max-sm:rounded-none max-sm:shadow-none">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">Toplam Quiz</CardTitle>
           </CardHeader>
@@ -270,7 +316,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="dashboard-card lg:bg-white/80 bg-white/38 backgdrop-blur-sm dark:bg-zinc-900/70">
+        <Card className="dashboard-card bg-white/80 backdrop-blur-sm dark:bg-zinc-900/70 max-sm:border-0 max-sm:rounded-none max-sm:shadow-none">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">Ortalama Başarı</CardTitle>
           </CardHeader>
@@ -278,10 +324,21 @@ export default function DashboardPage() {
             <p className="text-3xl font-black text-blue-700 dark:text-blue-300"><CountUp value={stats.averageScorePercent} prefix="%" /></p>
           </CardContent>
         </Card>
+
+        <Card className="dashboard-card bg-white/80 backdrop-blur-sm dark:bg-zinc-900/70 max-sm:border-0 max-sm:rounded-none max-sm:shadow-none">
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">Günlük Seri</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-black text-indigo-700 dark:text-indigo-300">
+              <CountUp value={stats.dailyStreak} suffix=" gün" />
+            </p>
+          </CardContent>
+        </Card>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-3">
-        <Card className="dashboard-card lg:bg-white/80 bg-white/38 backgdrop-blur-sm dark:bg-zinc-900/70 lg:col-span-2">
+      <section className="grid gap-4 lg:grid-cols-3 max-sm:gap-0">
+        <Card className="dashboard-card bg-white/80 backdrop-blur-sm dark:bg-zinc-900/70 lg:col-span-2 max-sm:border-0 max-sm:rounded-none max-sm:shadow-none">
           <CardHeader>
             <CardTitle>Quiz Performans Grafiği</CardTitle>
           </CardHeader>
@@ -300,7 +357,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="lg:bg-white/80 bg-white/38 backgdrop-blur-sm dark:bg-zinc-900/70">
+        <Card className="bg-white/80 backdrop-blur-sm dark:bg-zinc-900/70 max-sm:border-0 max-sm:rounded-none max-sm:shadow-none">
           <CardHeader>
             <CardTitle>Quiz Mod Dağılımı</CardTitle>
           </CardHeader>
@@ -330,7 +387,7 @@ export default function DashboardPage() {
         </Card>
       </section>
 
-      <Card className="lg:bg-white/80 bg-white/38 backgdrop-blur-sm dark:bg-zinc-900/70">
+      <Card className="bg-white/80 backdrop-blur-sm dark:bg-zinc-900/70 max-sm:border-0 max-sm:rounded-none max-sm:shadow-none">
         <CardHeader>
           <CardTitle>Set Bazlı Başarı</CardTitle>
         </CardHeader>
@@ -358,7 +415,7 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      <Card className="lg:bg-white/80 bg-white/38 backgdrop-blur-sm dark:bg-zinc-900/70">
+      <Card className="bg-white/80 backdrop-blur-sm dark:bg-zinc-900/70 max-sm:border-0 max-sm:rounded-none max-sm:shadow-none">
         <CardHeader>
           <CardTitle>Kelime Bilme Seviyesi</CardTitle>
         </CardHeader>
@@ -414,10 +471,10 @@ export default function DashboardPage() {
       </Card>
 
       <Card
-        className={[
-          "lg:bg-white/80 bg-white/38 backgdrop-blur-sm dark:bg-zinc-900/70",
+        className={cn(
+          "bg-white/80 backdrop-blur-sm dark:bg-zinc-900/70 max-sm:border-0 max-sm:rounded-none max-sm:shadow-none",
           hasConfiguredPlan ? "" : "ring-2 ring-rose-300 dark:ring-rose-700",
-        ].join(" ")}
+        )}
       >
         <CardHeader>
           <CardTitle>Günlük Program Ayarı</CardTitle>
@@ -470,7 +527,7 @@ export default function DashboardPage() {
                 {todayEstimatedMinutes}/{dailyGoal} dk (%{dailyProgressPercent})
               </span>
             </div>
-            <div className="h-2 rounded-full bg-zinc-200 dark:bg-zinc-800">
+            <div className="dashboard-progress-bar h-2 rounded-full bg-zinc-200 dark:bg-zinc-800">
               <div className="h-full rounded-full bg-gradient-to-r from-rose-500 to-blue-500" style={{ width: `${dailyProgressPercent}%` }} />
             </div>
           </div>

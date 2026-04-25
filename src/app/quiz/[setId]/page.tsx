@@ -467,7 +467,7 @@ export default function QuizPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-0 max-sm:gap-0 sm:gap-6 px-0 max-sm:px-0 sm:px-4 py-0 max-sm:py-0 sm:py-8">
       <header className="animate-fade-up flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm uppercase tracking-[0.2em] text-fuchsia-700">Quiz</p>

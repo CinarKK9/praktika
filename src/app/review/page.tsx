@@ -56,8 +56,8 @@ export default function ReviewPage() {
 
   if (dueCards.length === 0) {
     return (
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
-        <Card className="bg-white/85 dark:bg-zinc-900/70">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-0 max-sm:gap-0 sm:gap-6 px-0 max-sm:px-0 sm:px-4 py-0 max-sm:py-0 sm:py-8">
+        <Card className="bg-white/85 max-sm:bg-white/80 max-sm:shadow-none max-sm:border-0 dark:bg-zinc-900/70">
           <CardHeader>
             <CardTitle>Tekrar Merkezi</CardTitle>
           </CardHeader>
@@ -99,8 +99,8 @@ export default function ReviewPage() {
 
   if (!current || done) {
     return (
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
-        <Card className="border-emerald-200 bg-emerald-50/90 dark:border-emerald-900/60 dark:bg-emerald-950/30">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-0 max-sm:gap-0 sm:gap-6 px-0 max-sm:px-0 sm:px-4 py-0 max-sm:py-0 sm:py-8">
+        <Card className="border-emerald-200 bg-emerald-50/90 dark:border-emerald-900/60 dark:bg-emerald-950/30 max-sm:border-0 max-sm:shadow-none max-sm:rounded-none">
           <CardHeader>
             <CardTitle className="text-3xl font-black dark:text-zinc-100">Tekrar Tamamlandı</CardTitle>
           </CardHeader>
@@ -129,8 +129,8 @@ export default function ReviewPage() {
   const setItem = getWordSetById(current.setId);
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-8">
-      <header className="flex flex-wrap items-center justify-between gap-2">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-0 max-sm:gap-0 sm:gap-6 px-0 max-sm:px-0 sm:px-4 py-0 max-sm:py-0 sm:py-8">
+      <header className="flex flex-wrap items-center justify-between gap-2 max-sm:px-4">
         <div>
           <p className="text-sm uppercase tracking-[0.2em] text-rose-700 dark:text-rose-300">Tekrar Merkezi</p>
           <h1 className="mt-2 text-2xl font-bold dark:text-zinc-100">Bugünkü Tekrarlar</h1>

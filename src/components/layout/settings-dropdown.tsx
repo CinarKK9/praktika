@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Settings } from "lucide-react";
 import { STORAGE_KEYS } from "@/lib/storage/keys";
-import { clearProgress } from "@/lib/storage/local-storage";
+import { clearProgress, readProgress, writeProgress } from "@/lib/storage/local-storage";
 
 function isDarkThemeEnabled(): boolean {
   if (typeof window === "undefined") {
@@ -42,6 +42,13 @@ function isDarkThemeEnabled(): boolean {
 
 export function SettingsDropdown() {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [autoPronounce, setAutoPronounce] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+
+  useEffect(() => {
+    setSpeechSupported(typeof window !== "undefined" && !!window.speechSynthesis);
+    setAutoPronounce(readProgress().autoPronounce ?? false);
+  }, []);
 
   function toggleTheme() {
     if (typeof window === "undefined") {
@@ -64,6 +71,13 @@ export function SettingsDropdown() {
     window.location.reload();
   }
 
+  function toggleAutoPronounce() {
+    const progress = readProgress();
+    const nextValue = !(progress.autoPronounce ?? false);
+    writeProgress({ ...progress, autoPronounce: nextValue });
+    setAutoPronounce(nextValue);
+  }
+
   return (
     <>
       <DropdownMenu modal={false}>
@@ -78,6 +92,9 @@ export function SettingsDropdown() {
           <DropdownMenuGroup>
             <DropdownMenuLabel>Genel</DropdownMenuLabel>
             <DropdownMenuItem onClick={toggleTheme}>Temayı değiştir</DropdownMenuItem>
+            <DropdownMenuItem onClick={toggleAutoPronounce} disabled={!speechSupported}>
+              Otomatik telaffuz: {autoPronounce ? "Açık" : "Kapalı"}
+            </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
@@ -114,6 +131,13 @@ export function SettingsDropdown() {
 
 export function MobileSettingsPanel() {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [autoPronounce, setAutoPronounce] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+
+  useEffect(() => {
+    setSpeechSupported(typeof window !== "undefined" && !!window.speechSynthesis);
+    setAutoPronounce(readProgress().autoPronounce ?? false);
+  }, []);
 
   function toggleTheme() {
     if (typeof window === "undefined") {
@@ -136,6 +160,13 @@ export function MobileSettingsPanel() {
     window.location.reload();
   }
 
+  function toggleAutoPronounce() {
+    const progress = readProgress();
+    const nextValue = !(progress.autoPronounce ?? false);
+    writeProgress({ ...progress, autoPronounce: nextValue });
+    setAutoPronounce(nextValue);
+  }
+
   return (
     <>
       <div className="mx-3 mt-2 border-t border-zinc-200 pt-2 dark:border-zinc-700">
@@ -146,6 +177,14 @@ export function MobileSettingsPanel() {
           className="mt-2 block w-full rounded-md px-0 py-1.5 text-left text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
         >
           Temayı değiştir
+        </button>
+        <button
+          type="button"
+          onClick={toggleAutoPronounce}
+          disabled={!speechSupported}
+          className="mt-1 block w-full rounded-md px-0 py-1.5 text-left text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-zinc-100 dark:hover:bg-zinc-800"
+        >
+          Otomatik telaffuz: {autoPronounce ? "Açık" : "Kapalı"}
         </button>
         <button
           type="button"
